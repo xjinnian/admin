@@ -1,1 +1,4 @@
-<template>LayoutContainer首页架子</template>
+<template>
+  LayoutContainer首页
+  <router-view></router-view>
+</template>
