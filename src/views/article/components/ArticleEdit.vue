@@ -6,7 +6,6 @@ import { Plus } from '@element-plus/icons-vue'
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import lodash from 'lodash'
-import axios from 'axios'
 import {
   artPublishService,
   artGetDetailService,
@@ -71,28 +70,6 @@ const open = async (row) => {
     imgUrl.value = ''
     console.log(editRef.value)
     // editorRef.value.setHTML('')  // setHTML
-  }
-}
-
-// 将网络图片地址转换为File对象
-async function imageUrlToFile(url, fileName) {
-  try {
-    // 第一步：使用axios获取网络图片数据
-    const response = await axios.get(url, { responseType: 'arraybuffer' })
-    const imageData = response.data
-
-    // 第二步：将图片数据转换为Blob对象
-    const blob = new Blob([imageData], {
-      type: response.headers['content-type']
-    })
-
-    // 第三步：创建一个新的File对象
-    const file = new File([blob], fileName, { type: blob.type })
-
-    return file
-  } catch (error) {
-    console.error('将图片转换为File对象时发生错误:', error)
-    throw error
   }
 }
 
