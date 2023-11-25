@@ -5,7 +5,6 @@ const channelList = ref([])
 const getarticleList = async () => {
   const res = await artGetChannelsService()
   channelList.value = res.data.data
-  console.log(channelList.value)
 }
 getarticleList()
 defineProps({

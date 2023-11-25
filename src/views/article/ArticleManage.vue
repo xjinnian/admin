@@ -5,10 +5,11 @@ import ChangeSelect from './components/ChangeSelect.vue'
 import { artGetListService } from '@/api/article.js'
 import ArticleEdit from './components/ArticleEdit.vue'
 import { formatTime } from '@/utils/format.js'
+import { artDelService } from '../../api/article'
 // 定义请求参数
 const params = ref({
   pagenum: 1,
-  pagesize: 5,
+  pagesize: 2,
   cate_id: '',
   state: ''
 })
@@ -42,7 +43,6 @@ const total = ref(0) //总条数
 const getArticleList = async () => {
   loading.value = true
   const res = await artGetListService(params.value) //注意这里传递的数据要.value
-  console.log(res)
   articleList.value = res.data.data
   total.value = res.data.total
   loading.value = false
@@ -78,13 +78,29 @@ const articleEditRef = ref()
 const onAddArticle = () => {
   articleEditRef.value.open({})
 }
+const onSuccess = (type) => {
+  if (type === 'add') {
+    //如果是添加(add) 则渲染最后一页，如果是编辑则不动渲染当前页
+    const lastPage = Math.ceil((total.value + 1) / params.value.pagesize) //计算总共页数
+    params.value.pagenum = lastPage
+  }
+
+  getArticleList()
+}
 // 编辑
 const onEditArticle = (row) => {
   articleEditRef.value.open(row)
 }
-// 删除
-const onDeleteArticle = (row) => {
-  console.log(row)
+// 删除文章
+const onDeleteArticle = async (row) => {
+  await ElMessageBox.confirm('你确认删除该文章信息吗？', '温馨提示', {
+    type: 'warning',
+    confirmButtonText: '确认',
+    cancelButtonText: '取消'
+  })
+  await artDelService(row.id)
+  ElMessage({ type: 'success', message: '删除成功' })
+  getArticleList()
 }
 </script>
 
@@ -162,6 +178,6 @@ const onDeleteArticle = (row) => {
       style="margin-top: 20px; justify-content: flex-end"
     />
     <!-- 抽屉 -->
-    <ArticleEdit ref="articleEditRef"></ArticleEdit>
+    <ArticleEdit @success="onSuccess(type)" ref="articleEditRef"></ArticleEdit>
   </ContainCard>
 </template>

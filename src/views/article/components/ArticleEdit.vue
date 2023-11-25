@@ -5,7 +5,14 @@ import { Plus } from '@element-plus/icons-vue'
 // 引入富文本编辑器
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
-import { artPublishService } from '@/api/article.js'
+import lodash from 'lodash'
+import axios from 'axios'
+import {
+  artPublishService,
+  artGetDetailService,
+  artEditService
+} from '@/api/article.js'
+import { baseURL } from '@/utils/request.js'
 const visibleDrawer = ref(false) //控制抽屉显示隐藏
 const defaultForm = ref({
   //默认数据
@@ -16,16 +23,16 @@ const defaultForm = ref({
   state: ''
 })
 
-const formModel = ref({ ...defaultForm })
+const formModel = ref(lodash.cloneDeep(defaultForm))
 const imgUrl = ref('') //图片
 const onUploadFile = (uploadFile) => {
   imgUrl.value = URL.createObjectURL(uploadFile.raw) //预览图片
   formModel.value.cover_img = uploadFile.raw
 }
 const emit = defineEmits(['success'])
+// 发布/草稿
 const onPublish = async (state) => {
   formModel.value.state = state
-  console.log(formModel.value.id)
   const fd = new FormData()
   for (let key in formModel.value) {
     fd.append(key, formModel.value[key]) //formdata添加数据使用append
@@ -33,6 +40,10 @@ const onPublish = async (state) => {
   if (formModel.value.id) {
     //编辑
     console.log('编辑')
+    await artEditService(fd)
+    ElMessage.success('编辑成功')
+    visibleDrawer.value = false
+    emit('success', 'edit')
   }
 
   // 添加
@@ -41,23 +52,60 @@ const onPublish = async (state) => {
   visibleDrawer.value = false
   emit('success', 'add')
 }
-const open = (row) => {
+const editRef = ref()
+const open = async (row) => {
   visibleDrawer.value = true
-  console.log(row)
   if (row.id) {
-    console.log('回显')
+    console.log('编辑回显')
+    const res = await artGetDetailService(row.id)
+    formModel.value = res.data.data
+    imgUrl.value = baseURL + formModel.value.cover_img
+    // formModel.value.cover_img = await imageUrlToFile(
+    //   imgUrl.value,
+    //   formModel.value.cover_img
+    // )
+    console.log(formModel.value)
   } else {
-    formModel.value = { ...defaultForm }
     console.log('添加')
+    formModel.value = lodash.cloneDeep(defaultForm) //深拷贝
+    imgUrl.value = ''
+    console.log(editRef.value)
+    // editorRef.value.setHTML('')  // setHTML
+  }
+}
+
+// 将网络图片地址转换为File对象
+async function imageUrlToFile(url, fileName) {
+  try {
+    // 第一步：使用axios获取网络图片数据
+    const response = await axios.get(url, { responseType: 'arraybuffer' })
+    const imageData = response.data
+
+    // 第二步：将图片数据转换为Blob对象
+    const blob = new Blob([imageData], {
+      type: response.headers['content-type']
+    })
+
+    // 第三步：创建一个新的File对象
+    const file = new File([blob], fileName, { type: blob.type })
+
+    return file
+  } catch (error) {
+    console.error('将图片转换为File对象时发生错误:', error)
+    throw error
   }
 }
 
 defineExpose({ open })
-// :title="formModel.id ? '编辑文章' : '添加文章'"  ??此处有问题，原应写在el-form标签上，加上就报错
 </script>
 <!-- 抽屉 -->
 <template>
-  <el-drawer v-model="visibleDrawer" direction="rtl" size="50%">
+  <el-drawer
+    v-model="visibleDrawer"
+    :title="formModel.id ? '编辑文章' : '添加文章'"
+    direction="rtl"
+    size="50%"
+  >
     <!-- 发表文章表单 -->
     <el-form :model="formModel" ref="formRef" label-width="100px">
       <el-form-item label="文章标题" prop="title">
@@ -82,6 +130,7 @@ defineExpose({ open })
         <!-- 富文本内容 -->
         <div class="editor">
           <quill-editor
+            ref="editRef"
             theme="snow"
             v-model:content="formModel.content"
             contentType="html"

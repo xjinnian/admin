@@ -17,5 +17,14 @@ export const artDelChannelService = (id) =>
 export const artGetListService = (params) =>
   request.get('/my/article/list', { params })
 
-//文章： 添加文章
+//文章： 添加文章 注意data是一个formData格式对象
 export const artPublishService = (data) => request.post('/my/article/add', data)
+// 根据id获取文章详情
+export const artGetDetailService = (id) =>
+  request.get('my/article/info', { params: { id } })
+//编辑文章
+export const artEditService = (data) => request.put('my/article/info', data)
+
+// 删除文章
+export const artDelService = (id) =>
+  request.delete('my/article/info', { params: { id } })
