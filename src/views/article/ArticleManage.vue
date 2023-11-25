@@ -87,7 +87,7 @@ const onSuccess = (type) => {
 
   getArticleList()
 }
-// 编辑
+// 编辑文章
 const onEditArticle = (row) => {
   articleEditRef.value.open(row)
 }
